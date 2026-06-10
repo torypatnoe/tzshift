@@ -4,8 +4,9 @@
 
 **DRI:** Tory Patnoe
 **Customer Narrative:** [customer-narrative.md](customer-narrative.md)
-**Status:** Active — Cycle 1 not yet shaped
-**Last updated:** 2026-06-09
+**Living Shape:** [shape.md](shape.md)
+**Status:** Active — Cycle 1 bet placed, awaiting Spec
+**Last updated:** 2026-06-10
 
 ---
 
@@ -34,7 +35,7 @@ Same as M3 for Android. Architecture/code-sharing decisions deferred until mobil
 
 ## Cycle log
 
-| Cycle | Milestone | Shape | Outcome / learning note |
+| Cycle | Milestone | Cycle record | Outcome / learning note |
 |---|---|---|---|
-| 1 | M1 — CLI translator | not started | — |
+| 1 | M1 — CLI translator | [bet placed](cycles/cycle-1.md) | — |
 | 2 | M2 — MacOS Desktop Widget | not started | — |

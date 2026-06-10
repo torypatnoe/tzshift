@@ -10,4 +10,4 @@ Tory Patnoe (DRI)
 
 ## Status
 
-Advanced to Customer Narrative — 2026-06-09
+Advanced through Research ([research/competitive-cli-timezone-tools.md](../research/competitive-cli-timezone-tools.md)) to Customer Narrative — 2026-06-09/10

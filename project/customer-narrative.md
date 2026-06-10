@@ -1,10 +1,14 @@
 # Customer Narrative: tztool
 
-> Forma project-level artifact. This document belongs to the Project and does not change cycle to cycle. If the customer or the problem changes, that is a new Project.
+> Forma project-level artifact. Cycles may sharpen this narrative (recorded in the changelog); they cannot change the customer or the problem — that would be a new Project.
+
+## Changelog
+- 2026-06-10: Competitive research moved to its own Research-stage artifact ([research/competitive-cli-timezone-tools.md](../research/competitive-cli-timezone-tools.md)); narrative now references it
+- 2026-06-09: Initial draft
 
 **DRI:** Tory Patnoe
 **Status:** Draft — awaiting DRI review
-**Last updated:** 2026-06-09
+**Last updated:** 2026-06-10
 
 ---
 
@@ -38,18 +42,9 @@ Today this requires context-switching to a website or app, manually setting up t
 - **General world-clock app** — not for travelers or the general public; SRE workflows only.
 - **Team chat/notifications** — we will not send alerts or messages to teammates.
 
-## Competitive research
+## Research findings referenced
 
-| Tool | What it does | Why it falls short for this customer |
-|---|---|---|
-| `date` / GNU coreutils (`TZ=... date -d`) | Shell-native conversion | Arcane syntax, differs across macOS/Linux, no team concept, easy to get wrong under pressure |
-| `zdump` | Dumps zone offsets | Reference tool, not a translator; no parsing of arbitrary timestamps |
-| `tz` (oz/tz, TUI) | Terminal world clock with zone list | Awareness only — doesn't translate a given arbitrary timestamp; no team roster semantics |
-| worldtimebuddy / Every Time Zone (web) | Visual zone comparison | Requires leaving the terminal; manual setup per conversion; not scriptable |
-| Clocker / menubar world clocks (macOS) | Glanceable multi-zone clocks | Current-time awareness only; can't translate "14:30 IST from this log line" |
-| Slack timestamp formatting | Renders times in reader's local zone | Only works if the sender formats it correctly — the problem is precisely that they don't |
-
-**Gap:** no tool combines (a) translation of arbitrary posted timestamps, (b) a team/zone roster so output is in *the people and systems you care about*, and (c) presence inside the SRE's working surfaces — terminal first, then glanceable widgets and mobile.
+Competitive landscape recorded in [research/competitive-cli-timezone-tools.md](../research/competitive-cli-timezone-tools.md). Its finding: no existing tool combines (a) translation of arbitrary posted timestamps, (b) a team/zone roster so output is in *the people and systems you care about*, and (c) presence inside the SRE's working surfaces — terminal first, then glanceable widgets and mobile. Every claim this narrative makes about existing solutions traces to that document.
 
 ## Hypothesis
 
