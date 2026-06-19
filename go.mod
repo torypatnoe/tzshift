@@ -1,0 +1,10 @@
+module github.com/torypatnoe/tztools
+
+go 1.26.3
+
+require (
+	github.com/BurntSushi/toml v1.6.0
+	golang.org/x/term v0.44.0
+)
+
+require golang.org/x/sys v0.46.0 // indirect
