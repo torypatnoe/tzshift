@@ -3,6 +3,7 @@
 > Forma living Spec — single document, always the full current state. A `## Changelog` at the top records what changed each cycle; the per-cycle delta is rendered from the changelog + git diff, not maintained separately. The milestone label is taken from the cycle record's Bet, not declared here independently.
 
 ## Changelog
+- 2026-06-19 (later): **No shipped abbreviation→zone mapping** — source zone is an IANA name or a `[zones]` alias, with an optional user-defined `[abbreviations]` escape hatch (AC8). Ambiguity AC reframed: an unknown/unresolvable source token is the hard error (AC9). Output now shows the **date** on every row, **sorts east-most (largest UTC offset) first** (overriding file order in AC6), **highlights cross-date rows** (color on TTY + persistent `+1`/`-1` marker), and **marks the local `you` row** (AC1, AC10). `list` no longer lists a shipped mapping — IANA zones + computed current abbreviation + the user's own `[abbreviations]` (AC14). Added AC15 (ordering) and AC16 (date display + cross-date highlight). Example commands updated to IANA/alias source zones.
 - 2026-06-19: Tool renamed `tz` → **`tzshift`**; subcommands `show` (default) / `list` added (AC1, AC13–AC14). **Language Swift → Go**; distribution AC rewritten for cross-unix static binaries (AC12). No-config fallback corrected to local + UTC + America/Denver (AC7). Abbreviation ACs clarified: mapping is tzshift's shipped data, not OS-derived (AC8–AC9). Config dir → `~/.config/tzshift`. Org-standards check updated to Go/IANA.
 - 2026-06-10: Initial Spec for Cycle 1 (M1 — CLI translator). Written against [cycle-1.md](cycles/cycle-1.md)'s Bet and the [living Shape](shape.md).
 
@@ -27,25 +28,27 @@ The detailed definition of the M1 CLI translator, `tzshift`. Bounds are inherite
 Written as observable outcomes. "Done" for Cycle 1 means all of the following hold.
 
 ### Core translation (`show`)
-- **AC1 — Wall-clock + zone.** `tzshift 14:30 IST` (routed to `show`) prints the input echoed with its resolved IANA zone, then one output row per roster entry, each showing the local wall-clock time, the zone abbreviation, and the roster label. Example output matches the Shape's narrative block.
-- **AC2 — Explicit date.** `tzshift 2026-06-09 14:30 IST` uses the given date for the conversion. With no date, the conversion assumes **today** and the output states that the date was assumed.
+- **AC1 — Wall-clock + source zone.** `tzshift 14:30 Asia/Kolkata` (or an alias, `tzshift 14:30 india`; routed to `show`) prints the input echoed with its resolved IANA zone, then one output row per roster entry, each showing the **date**, the local wall-clock time, the zone abbreviation, and the roster label. Rows are ordered and date-marked per AC15–AC16. Example output matches the Shape's narrative block.
+- **AC2 — Explicit date.** `tzshift 2026-06-09 14:30 Asia/Kolkata` uses the given date for the conversion. With no date, the conversion assumes **today** and the output states that the date was assumed.
 - **AC3 — Epoch seconds.** `tzshift 1749571200` interprets a bare integer as Unix epoch seconds and translates it to every roster zone.
-- **AC4 — One-off target.** `tzshift 14:30 IST --to Europe/Berlin` adds a single ad-hoc output row for a zone not in the roster, without modifying the roster.
+- **AC4 — One-off target.** `tzshift 14:30 Asia/Kolkata --to Europe/Berlin` adds a single ad-hoc output row for a zone not in the roster, without modifying the roster. `--to` accepts an IANA name or a `[zones]` alias (never a shipped abbreviation).
 - **AC5 — DST correctness.** A timestamp that falls on either side of a DST transition (verified with at least one spring-forward and one fall-back date per affected zone) converts to the correct local time. All conversions go through the IANA tz database; no hand-rolled offset math.
 - **AC13 — Current-time mode.** `tzshift show` (or bare `tzshift`) with no timestamp prints the current time across the roster zones.
 
 ### Reference (`list`)
-- **AC14 — Zone & abbreviation listing.** `tzshift list` enumerates the IANA zone identifiers tzshift knows and each zone's current abbreviation, plus tzshift's shipped abbreviation → zone mapping. Zone data is read from the IANA database **embedded in the binary** (not the host OS's zoneinfo), so output is identical across Linux/macOS/unix.
+- **AC14 — Zone & abbreviation listing.** `tzshift list` enumerates the IANA zone identifiers tzshift knows and each zone's computed current abbreviation, plus the user's configured `[abbreviations]` (if any). There is **no shipped abbreviation → zone mapping** to list. Zone data is read from the IANA database **embedded in the binary** (not the host OS's zoneinfo), so output is identical across Linux/macOS/unix.
 
 ### Roster & configuration
-- **AC6 — Roster file.** Output rows are driven by `[zones]` in `~/.config/tzshift/config.toml` (label → IANA zone), preserving file order.
+- **AC6 — Roster file.** Output rows are driven by `[zones]` in `~/.config/tzshift/config.toml` (alias → IANA zone). File order does **not** determine output order — rows are sorted per AC15. The aliases defined here are also valid source-zone and `--to` tokens.
 - **AC7 — No-config fallback.** With no config file present, the tool prints a helpful message showing how to create one, then falls back to translating into **local time + UTC + America/Denver**. It does not error.
-- **AC8 — Abbreviation resolution.** A shipped opinionated default mapping (tzshift's own data, not OS-derived) resolves common SRE abbreviations (e.g. IST→Asia/Kolkata) to a single IANA zone. The `[abbreviations]` table in config overrides any default.
-- **AC9 — Ambiguity is a hard error, never a silent guess.** When an abbreviation is genuinely ambiguous and unresolved by config (e.g. CST), the tool exits non-zero and lists the candidate zones. It never picks one silently.
+- **AC8 — Source-zone resolution (no shipped mapping).** A source zone resolves from, in order: a `[zones]` alias, the user's `[abbreviations]` table (`abbr → IANA zone`, the user's own data), or a literal IANA identifier. tzshift ships **no** abbreviation→zone table — a bare three-letter abbreviation that the user has not defined does not resolve.
+- **AC9 — Unknown source zone is a hard error, never a silent guess.** When a source token resolves to no zone (e.g. a bare `IST` with no matching alias or `[abbreviations]` entry), the tool exits non-zero with a message telling the user to use an IANA name or define an alias/abbreviation. It never picks a zone silently.
 
 ### Output & ergonomics
-- **AC10 — Human-first, pipe-safe output.** Default output is column-aligned with arrow prefixes. Output is plain text — greppable and pipeable. A `--no-color` / non-TTY degradation path is acceptable to defer if the appetite runs short (per Shape).
-- **AC11 — Exit codes.** Successful translation exits 0; bad input, unresolved ambiguity, and malformed config exit non-zero with a message on stderr.
+- **AC10 — Human-first, pipe-safe output.** Default output is column-aligned with arrow prefixes and is plain text — greppable and pipeable. Color is emitted only when stdout is a TTY (and suppressed by `--no-color`); all information conveyed by color is also conveyed by text (see AC16), so piped output loses no meaning.
+- **AC11 — Exit codes.** Successful translation exits 0; bad input, an unresolvable source zone, and malformed config exit non-zero with a message on stderr.
+- **AC15 — Chronological ordering (east-most first).** Output rows are sorted by UTC offset descending — the **east-most zone (largest offset) first**, down to the west-most. This overrides `[zones]` file order. Ordering is deterministic for a given instant; the local `you` row is marked (AC16) rather than positioned.
+- **AC16 — Date display & cross-date highlight.** Every output row shows its date alongside the wall-clock time. A row whose local date differs from the local (`you`) row's date is **highlighted in color when stdout is a TTY** and is annotated with a persistent `+1` / `-1` (or larger) day-offset marker that survives a pipe / `--no-color`. The local row is marked (e.g. `←you`) so it is identifiable despite not being pinned to the top.
 
 ### Distribution
 - **AC12 — Builds and runs across unix.** Builds from source via `go build` and runs on Linux and macOS (and other unix targets in the release matrix). A statically linked release binary is produced per target via cross-compilation, with no runtime dependency on the host's zoneinfo (IANA DB embedded). (Homebrew and other package managers remain out — see Bet.)
