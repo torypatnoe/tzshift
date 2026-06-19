@@ -1,6 +1,6 @@
 # Forma dogfood retro — lessons from running tztool through the workflow
 
-> Destination: this is feedback for the **`../forma-program-management`** repo, not a tztool artifact. It extends the dogfood validation already logged there ([cycles/cycle-1.md](../forma-program-management/cycles/cycle-1.md) → "Review 1 — AI dogfood pass (tztool)"). Treat each entry below as a candidate validation-log entry / Shape changelog item for that repo. Captured 2026-06-18/19 while taking tztool from Idea → Spec.
+> Destination: this is feedback for the **`../../forma-program-management`** repo, not a tztool artifact. It extends the dogfood validation already logged there ([cycles/cycle-1.md](../../forma-program-management/cycles/cycle-1.md) → "Review 1 — AI dogfood pass (tztool)"). Treat each entry below as a candidate validation-log entry / Shape changelog item for that repo. Captured 2026-06-18/19 while taking tztool from Idea → Spec.
 
 ---
 
@@ -47,4 +47,4 @@ The Spec gate's "organization standards check" assumes standing org-standard art
 
 ---
 
-*Next: fold these into `../forma-program-management/cycles/cycle-1.md`'s validation log and/or the Shape changelog when updating that repo.*
+*Next: fold these into `../../forma-program-management/cycles/cycle-1.md`'s validation log and/or the Shape changelog when updating that repo.*
