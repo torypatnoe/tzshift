@@ -5,8 +5,9 @@
 **DRI:** Tory Patnoe
 **Customer Narrative:** [customer-narrative.md](customer-narrative.md)
 **Living Shape:** [shape.md](shape.md)
-**Status:** Active — Cycle 1 bet placed, awaiting Spec
-**Last updated:** 2026-06-10
+**Living Spec:** [spec.md](spec.md)
+**Status:** Active — Cycle 1 Shape + Spec drafted (Go, cross-unix), ready for Tickets
+**Last updated:** 2026-06-19
 
 ---
 
@@ -14,11 +15,11 @@
 
 Per Forma, only the current milestone is fully resolved. Future milestones stay deliberately rough until the preceding cycle ships and is measured.
 
-### M1 — CLI translator (current; to be shaped in Cycle 1)
-A command-line tool that takes any timestamp in any timezone and instantly translates it to the user's time and their configured team/system zones. The core translation engine and zone-roster concept are proven here.
+### M1 — `tzshift` CLI translator (current; shaped + specced in Cycle 1)
+A cross-unix (Linux/macOS) command-line tool, `tzshift`, that takes any timestamp in any timezone and instantly translates it to the user's time and their configured team/system zones. Subcommand-oriented (`show` default, `list`). Built in Go. The core translation logic and zone-roster concept are proven here.
 
 ### M2 — macOS widget (rough)
-Glanceable team-time awareness on the desktop. Hypothesis: reuses M1's roster and translation core. Shape after M1's Measure.
+Glanceable team-time awareness on the desktop. Built natively (Swift) when validated, reusing M1's translation *logic* and roster model — not the Go binary itself. Shape after M1's Measure.
 
 ### M3 — iOS app (hypothesis)
 Translation + team awareness away from the desk. Untested assumption that mobile is where SREs need this; M1/M2 learning will confirm or kill.
