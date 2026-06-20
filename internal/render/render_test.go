@@ -53,6 +53,35 @@ func TestShowColorOnlyOnCrossDate(t *testing.T) {
 	}
 }
 
+func TestListZoneFormat(t *testing.T) {
+	at, _ := time.Parse(time.RFC3339, "2026-01-15T00:00:00Z") // winter: Denver = MST
+	var buf bytes.Buffer
+	List(&buf, []string{"UTC", "Asia/Kolkata", "America/Denver", "Pacific/Kiritimati"}, nil, at)
+	out := buf.String()
+
+	for _, want := range []string{"+00:00  UTC", "+05:30  IST", "-07:00  MST"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("list output missing %q\n%s", want, out)
+		}
+	}
+	// A numeric pseudo-abbreviation (+14) is suppressed: the row ends at the offset.
+	if !strings.Contains(out, "+14:00\n") {
+		t.Errorf("expected Pacific/Kiritimati row to end at its offset\n%s", out)
+	}
+	if strings.Contains(out, "+14:00  +14") {
+		t.Errorf("numeric pseudo-abbreviation should be suppressed\n%s", out)
+	}
+}
+
+func TestFormatOffset(t *testing.T) {
+	cases := map[int]string{0: "+00:00", 5*3600 + 1800: "+05:30", -7 * 3600: "-07:00", 14 * 3600: "+14:00"}
+	for sec, want := range cases {
+		if got := formatOffset(sec); got != want {
+			t.Errorf("formatOffset(%d) = %q, want %q", sec, got, want)
+		}
+	}
+}
+
 func TestDayMarker(t *testing.T) {
 	cases := map[int]string{0: "", 1: "+1", 2: "+2", -1: "-1"}
 	for n, want := range cases {

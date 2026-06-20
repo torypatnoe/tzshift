@@ -68,10 +68,26 @@ func dayMarker(n int) string {
 	}
 }
 
+// formatOffset renders a UTC offset in seconds as ±HH:MM.
+func formatOffset(sec int) string {
+	sign := "+"
+	if sec < 0 {
+		sign, sec = "-", -sec
+	}
+	return fmt.Sprintf("%s%02d:%02d", sign, sec/3600, (sec%3600)/60)
+}
+
+// isLetterCode reports whether an abbreviation is a real letter code (e.g. MDT)
+// rather than a numeric pseudo-abbreviation (e.g. +0530), which Go returns for
+// zones with no named abbreviation. Numeric ones always begin with + or -.
+func isLetterCode(abbr string) bool {
+	return abbr != "" && abbr[0] != '+' && abbr[0] != '-'
+}
+
 // List writes the reference output: every known IANA zone with its current
 // abbreviation, then the user's configured [abbreviations] (Spec AC14).
 func List(w io.Writer, zoneNames []string, abbrev map[string]string, now time.Time) {
-	fmt.Fprintln(w, "ZONES  (identifier -> current abbreviation)")
+	fmt.Fprintln(w, "ZONES  (identifier, current UTC offset, abbreviation)")
 	nameW := 0
 	for _, z := range zoneNames {
 		if len(z) > nameW {
@@ -79,11 +95,16 @@ func List(w io.Writer, zoneNames []string, abbrev map[string]string, now time.Ti
 		}
 	}
 	for _, z := range zoneNames {
-		ab := "?"
+		offset, abbr := "", ""
 		if loc, err := time.LoadLocation(z); err == nil {
-			ab, _ = now.In(loc).Zone()
+			ab, off := now.In(loc).Zone()
+			offset = formatOffset(off)
+			if isLetterCode(ab) { // skip numeric pseudo-abbreviations (e.g. +0530)
+				abbr = ab
+			}
 		}
-		fmt.Fprintf(w, "  %-*s  %s\n", nameW, z, ab)
+		line := fmt.Sprintf("  %-*s  %-6s  %s", nameW, z, offset, abbr)
+		fmt.Fprintln(w, strings.TrimRight(line, " "))
 	}
 
 	fmt.Fprintln(w)
