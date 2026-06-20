@@ -3,6 +3,7 @@
 > Forma living Spec — single document, always the full current state. A `## Changelog` at the top records what changed each cycle; the per-cycle delta is rendered from the changelog + git diff, not maintained separately. The milestone label is taken from the cycle record's Bet, not declared here independently.
 
 ## Changelog
+- 2026-06-20: `tzshift list` gains `--sort=name|offset` (default `name`); `--sort=offset` orders zones east-most first, mirroring `show` (AC14/AC15).
 - 2026-06-19 (later): **No shipped abbreviation→zone mapping** — source zone is an IANA name or a `[zones]` alias, with an optional user-defined `[abbreviations]` escape hatch (AC8). Ambiguity AC reframed: an unknown/unresolvable source token is the hard error (AC9). Output now shows the **date** on every row, **sorts east-most (largest UTC offset) first** (overriding file order in AC6), **highlights cross-date rows** (color on TTY + persistent `+1`/`-1` marker), and **marks the local `you` row** (AC1, AC10). `list` no longer lists a shipped mapping — IANA zones + computed current abbreviation + the user's own `[abbreviations]` (AC14). Added AC15 (ordering) and AC16 (date display + cross-date highlight). Example commands updated to IANA/alias source zones.
 - 2026-06-19: Tool renamed `tz` → **`tzshift`**; subcommands `show` (default) / `list` added (AC1, AC13–AC14). **Language Swift → Go**; distribution AC rewritten for cross-unix static binaries (AC12). No-config fallback corrected to local + UTC + America/Denver (AC7). Abbreviation ACs clarified: mapping is tzshift's shipped data, not OS-derived (AC8–AC9). Config dir → `~/.config/tzshift`. Org-standards check updated to Go/IANA.
 - 2026-06-10: Initial Spec for Cycle 1 (M1 — CLI translator). Written against [cycle-1.md](cycles/cycle-1.md)'s Bet and the [living Shape](shape.md).
@@ -36,7 +37,7 @@ Written as observable outcomes. "Done" for Cycle 1 means all of the following ho
 - **AC13 — Current-time mode.** `tzshift show` (or bare `tzshift`) with no timestamp prints the current time across the roster zones.
 
 ### Reference (`list`)
-- **AC14 — Zone & abbreviation listing.** `tzshift list` enumerates the IANA zone identifiers tzshift knows and each zone's computed current abbreviation, plus the user's configured `[abbreviations]` (if any). There is **no shipped abbreviation → zone mapping** to list. Zone data is read from the IANA database **embedded in the binary** (not the host OS's zoneinfo), so output is identical across Linux/macOS/unix.
+- **AC14 — Zone & abbreviation listing.** `tzshift list` enumerates the IANA zone identifiers tzshift knows and each zone's computed current abbreviation, plus the user's configured `[abbreviations]` (if any). There is **no shipped abbreviation → zone mapping** to list. Zone data is read from the IANA database **embedded in the binary** (not the host OS's zoneinfo), so output is identical across Linux/macOS/unix. Default order is alphabetical (`--sort=name`); `--sort=offset` orders east-most first (largest current UTC offset), matching `show`'s ordering (AC15).
 
 ### Roster & configuration
 - **AC6 — Roster file.** Output rows are driven by `[zones]` in `~/.config/tzshift/config.toml` (alias → IANA zone). File order does **not** determine output order — rows are sorted per AC15. The aliases defined here are also valid source-zone and `--to` tokens.

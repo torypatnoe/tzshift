@@ -228,6 +228,34 @@ func markLocal(rows []Row, localOff int) {
 	}
 }
 
+// SortedByOffset returns zone names ordered east-most first (largest UTC offset
+// at the given instant), tie-broken by name. Used by `tzshift list --east`.
+func SortedByOffset(names []string, at time.Time) []string {
+	type zo struct {
+		name string
+		off  int
+	}
+	zos := make([]zo, 0, len(names))
+	for _, n := range names {
+		off := 0
+		if loc, err := time.LoadLocation(n); err == nil {
+			_, off = at.In(loc).Zone()
+		}
+		zos = append(zos, zo{n, off})
+	}
+	sort.SliceStable(zos, func(i, j int) bool {
+		if zos[i].off != zos[j].off {
+			return zos[i].off > zos[j].off
+		}
+		return zos[i].name < zos[j].name
+	})
+	out := make([]string, len(zos))
+	for i, z := range zos {
+		out[i] = z.name
+	}
+	return out
+}
+
 func dateOnly(t time.Time) time.Time {
 	y, m, d := t.Date()
 	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)

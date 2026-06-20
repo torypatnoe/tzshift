@@ -148,6 +148,18 @@ func TestWallClockDST(t *testing.T) {
 	}
 }
 
+func TestSortedByOffset(t *testing.T) {
+	at, _ := time.Parse(time.RFC3339, "2026-06-20T00:00:00Z")
+	in := []string{"America/New_York", "Asia/Tokyo", "UTC", "America/Los_Angeles"}
+	got := SortedByOffset(in, at)
+	want := []string{"Asia/Tokyo", "UTC", "America/New_York", "America/Los_Angeles"}
+	for i, w := range want {
+		if got[i] != w {
+			t.Errorf("position %d = %q, want %q (full: %v)", i, got[i], w, got)
+		}
+	}
+}
+
 func TestRowsOrderingEastFirst(t *testing.T) {
 	instant, _ := time.Parse(time.RFC3339, "2026-06-20T09:00:00Z")
 	entries := []Entry{

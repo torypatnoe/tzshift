@@ -45,7 +45,7 @@ func run(argv []string) int {
 
 	switch cmd {
 	case "list":
-		return runList(color)
+		return runList(flags.sort)
 	default:
 		return runShow(args, flags.to, color)
 	}
@@ -84,12 +84,17 @@ func runShow(args []string, to string, color bool) int {
 	return 0
 }
 
-func runList(color bool) int {
+func runList(sortMode string) int {
 	_, abbrev, _, notice := roster()
 	if notice != "" {
 		fmt.Fprint(os.Stderr, notice)
 	}
-	render.List(os.Stdout, tz.ZoneNames, abbrev, time.Now())
+	now := time.Now()
+	names := tz.ZoneNames // default ("name"): alphabetical, good for catalog lookup
+	if sortMode == "offset" {
+		names = tz.SortedByOffset(names, now)
+	}
+	render.List(os.Stdout, names, abbrev, now)
 	return 0
 }
 
@@ -113,6 +118,7 @@ type flagSet struct {
 	to      string
 	noColor bool
 	help    bool
+	sort    string // `list --sort=name|offset` (default name)
 }
 
 // color reports whether ANSI color should be emitted: only on a TTY and only
@@ -134,6 +140,14 @@ func parseFlags(argv []string) (flagSet, []string, error) {
 		switch {
 		case a == "--no-color":
 			f.noColor = true
+		case a == "--sort":
+			if i+1 >= len(argv) {
+				return f, nil, fmt.Errorf("--sort needs a value (name or offset)")
+			}
+			i++
+			f.sort = argv[i]
+		case len(a) > 7 && a[:7] == "--sort=":
+			f.sort = a[7:]
 		case a == "-h" || a == "--help":
 			f.help = true
 		case a == "--to":
@@ -148,6 +162,9 @@ func parseFlags(argv []string) (flagSet, []string, error) {
 			rest = append(rest, a)
 		}
 	}
+	if f.sort != "" && f.sort != "name" && f.sort != "offset" {
+		return f, nil, fmt.Errorf("--sort must be name or offset (got %q)", f.sort)
+	}
 	return f, rest, nil
 }
 
@@ -155,7 +172,7 @@ const usage = `tzshift — translate a timestamp into your roster's zones
 
 Usage:
   tzshift [TIME [DATE] ZONE] [--to ZONE] [--no-color]
-  tzshift list
+  tzshift list [--sort=name|offset]
 
 Examples:
   tzshift 14:30 Asia/Kolkata        wall-clock time in a zone (date = today)
@@ -165,6 +182,7 @@ Examples:
   tzshift                           current time across your roster
   tzshift 14:30 UTC --to Europe/Berlin   add a one-off zone
   tzshift list                      known zones + your abbreviations
+  tzshift list --sort=offset        same, sorted east-most first
 
 Config: ~/.config/tzshift/config.toml  ([zones] and optional [abbreviations])
 `
