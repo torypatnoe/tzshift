@@ -102,18 +102,3 @@ func Fallback() []tz.Entry {
 		{Label: "America/Denver", Zone: "America/Denver"},
 	}
 }
-
-// FallbackMessage is the helpful first-run hint printed alongside fallback output.
-func FallbackMessage() string {
-	return fmt.Sprintf(`No config found at %s -- showing local, UTC, and America/Denver.
-Create that file with a [zones] roster to choose your own, e.g.:
-
-  [zones]
-  you   = "America/Los_Angeles"
-  ny-dc = "America/New_York"
-
-  # optional: your own source-zone shortcuts
-  [abbreviations]
-  IST = "Asia/Kolkata"
-`, Path())
-}

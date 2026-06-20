@@ -109,7 +109,9 @@ func roster() (aliases, abbrev map[string]string, entries []tz.Entry, notice str
 			fmt.Sprintf("tzshift: %v\n", err)
 	}
 	if !found {
-		return map[string]string{}, map[string]string{}, config.Fallback(), config.FallbackMessage()
+		// No config is a normal state, not an error: fall back silently.
+		// `tzshift --help` documents the file and the fallback.
+		return map[string]string{}, map[string]string{}, config.Fallback(), ""
 	}
 	return cfg.Zones, cfg.Abbreviations, cfg.Entries(), ""
 }
@@ -184,5 +186,15 @@ Examples:
   tzshift list                      known zones (east-most first) + your abbreviations
   tzshift list --sort=name          ...sorted alphabetically instead
 
-Config: ~/.config/tzshift/config.toml  ([zones] and optional [abbreviations])
+Config:
+  ~/.config/tzshift/config.toml defines your roster and optional shortcuts:
+
+    [zones]                          # label = IANA zone (output rows; also source aliases)
+    you   = "America/Los_Angeles"
+    ny-dc = "America/New_York"
+
+    [abbreviations]                  # optional: your own source-zone shortcuts
+    IST = "Asia/Kolkata"
+
+  With no config file, tzshift falls back to local time, UTC, and America/Denver.
 `
