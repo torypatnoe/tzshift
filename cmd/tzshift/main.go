@@ -90,9 +90,9 @@ func runList(sortMode string) int {
 		fmt.Fprint(os.Stderr, notice)
 	}
 	now := time.Now()
-	names := tz.ZoneNames // default ("name"): alphabetical, good for catalog lookup
-	if sortMode == "offset" {
-		names = tz.SortedByOffset(names, now)
+	names := tz.SortedByOffset(tz.ZoneNames, now) // default: east-most first, mirroring show
+	if sortMode == "name" {
+		names = tz.ZoneNames // explicit alphabetical (already sorted)
 	}
 	render.List(os.Stdout, names, abbrev, now)
 	return 0
@@ -181,8 +181,8 @@ Examples:
   tzshift 1749571200                epoch seconds
   tzshift                           current time across your roster
   tzshift 14:30 UTC --to Europe/Berlin   add a one-off zone
-  tzshift list                      known zones + your abbreviations
-  tzshift list --sort=offset        same, sorted east-most first
+  tzshift list                      known zones (east-most first) + your abbreviations
+  tzshift list --sort=name          ...sorted alphabetically instead
 
 Config: ~/.config/tzshift/config.toml  ([zones] and optional [abbreviations])
 `
