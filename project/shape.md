@@ -3,6 +3,10 @@
 > Forma living Shape — describes the full product as currently understood, deliberately larger than any single cycle's work. What a specific cycle commits to is recorded in that cycle's record (`cycles/cycle-N.md`). Per-cycle facts (appetite, scope boundary, DRI confirmation) live only in the Bet.
 
 ## Changelog
+- 2026-06-22: **Source zone is now optional.** `tzshift 14:30` (no zone) interprets the time in your local zone instead of erroring; the local `←you` row is then also the `←source`.
+- 2026-06-22: **`show` drops the echo/header line.** The source zone is identified inline by a **`←source`** marker (a row that is both source and local shows `←you  ←source`); the assumed date is conveyed by the per-row dates rather than a header note.
+- 2026-06-22: **`show` auto-includes your local time and the source zone.** The `+1`/`-1` day markers are anchored to your host's local date; that local row (`←you`) is now always shown — added automatically if your roster doesn't list your zone — so the markers always have a visible reference. The source zone you typed is likewise always shown. (Fixes the confusing case where every row showed `+1` against an off-screen anchor.)
+- 2026-06-22: **`show` output reordered and abbreviation dropped.** Rows now read **label, date, time, UTC offset (`±HH:MM`)** — the three-letter zone abbreviation (PDT/JST) is no longer shown in `show` output; the numeric offset replaces it (clearer, unambiguous). `list` still shows letter-code abbreviations alongside the offset. Supersedes "Output abbreviations (PDT/JST) stay" in the entry below as it applies to `show` rows.
 - 2026-06-19 (later, supersedes the abbreviation parts of the entry below): **No embedded abbreviation→zone mapping.** Dropped the shipped opinionated abbreviation table as a *source-zone resolver* — abbreviations are too ambiguous (IST = India/Israel/Ireland) and a shipped guess is exactly the silent-guess failure the tool exists to avoid. The source zone is now an **IANA name or a `[zones]` roster alias**; an optional user-defined `[abbreviations]` table is the escape hatch (the user's own data, still nothing embedded). Output also changes: every row now (a) shows the **date**, (b) **highlights cross-date rows** vs. the local row — color when stdout is a TTY, plus a `+1`/`-1` marker that survives a pipe, (c) is sorted **east-most (largest UTC offset) first** instead of config-file order, and (d) **marks the local `you` row**. Output abbreviations (PDT/JST) stay — computed per-instant *display*, never input resolvers. Affects AC1, AC4, AC6, AC8–AC10, AC14; adds AC15 (ordering) + AC16 (date display + cross-date highlight).
 - 2026-06-19: Tool renamed `tz` → **`tzshift`** (`tz` is taken — see research). Subcommand model adopted (`show` default, `list`). **Language changed Swift → Go** after the Customer Narrative committed to Linux/macOS/unix support in phase 1: Swift's justification rested entirely on hypothesis milestones (M2/M3), and the known phase-1 requirement is a cross-unix CLI — Go's strength, Swift's weakness (retro lesson #3). DST decision decoupled from a specific library (states the requirement, not the runtime — retro lesson #4). Config dir `~/.config/tztool` → `~/.config/tzshift`. No-config fallback set to local + UTC + America/Denver.
 - 2026-06-10: Initial living Shape, converted from the Cycle 1 per-cycle shape draft under the updated Forma workflow. Covers the CLI translator in detail; later surfaces (widget, mobile) noted as rough.
@@ -23,12 +27,11 @@ An SRE is reading an incident channel. A teammate in Bangalore writes "rollback 
 
 ```
 $ tzshift 14:30 Asia/Kolkata
-14:30 → source Asia/Kolkata, date assumed today (2026-06-19)
-→ 2026-06-19 18:00 JST  tokyo-team
-→ 2026-06-19 14:30 IST  india
-→ 2026-06-19 09:00 UTC  legacy-billing
-→ 2026-06-19 05:00 EDT  ny-dc
-→ 2026-06-19 02:00 PDT  you  ←you
+→ tokyo-team      2026-06-19 18:00 +09:00
+→ india           2026-06-19 14:30 +05:30  ←source
+→ legacy-billing  2026-06-19 09:00 +00:00
+→ ny-dc           2026-06-19 05:00 -04:00
+→ you             2026-06-19 02:00 -07:00  ←you
 ```
 
 One command, instant answer, no mental math. The source zone is given as an **IANA name** (`Asia/Kolkata`) or a **roster alias** (`india`) — tzshift ships no three-letter input mapping, because an abbreviation like `IST` (India? Israel? Ireland?) is exactly the silent guess the tool refuses to make. The output rows come from a roster the SRE set up once:
@@ -58,19 +61,20 @@ The `[zones]` roster names the zones the SRE actually cares about — people, da
 
 ```
 $ tzshift 23:30 Asia/Kolkata
-→ 2026-06-20 03:00 JST  tokyo-team  +1
-→ 2026-06-19 23:30 IST  india
-→ 2026-06-19 18:00 UTC  legacy-billing
-→ 2026-06-19 14:00 EDT  ny-dc
-→ 2026-06-19 11:00 PDT  you  ←you
+→ tokyo-team      2026-06-20 03:00 +09:00  +1
+→ india           2026-06-19 23:30 +05:30  ←source
+→ legacy-billing  2026-06-19 18:00 +00:00
+→ ny-dc           2026-06-19 14:00 -04:00
+→ you             2026-06-19 11:00 -07:00  ←you
 ```
 
-- The local **`you` row is marked** (`←you`) so it stays findable even though it is no longer pinned to the top.
+- The local **`you` row is marked** (`←you`) so it stays findable even though it is no longer pinned to the top. It is the **anchor for the `+1`/`-1` markers** — and `show` always includes it (and the source zone you typed, marked **`←source`**), adding either automatically when your roster doesn't already list it. That way the day markers always reference a row you can actually see. There is **no echo/header line**; the source row's `←source` marker replaces it (a row that is both shows `←you  ←source`).
 
 Variations the narrative must cover:
 
 - `tzshift show` (or bare `tzshift`) with no timestamp — outputs the current time across the configured roster zones (glanceable "what time is it for my team right now").
 - `tzshift 14:30 Asia/Kolkata` (or `tzshift 14:30 india`) — wall-clock time + source zone, the core case (no subcommand → routed to `show`).
+- `tzshift 14:30` — wall-clock time with **no** source zone: interpreted in your own local zone (the `←you` row is then also `←source`).
 - `tzshift 2026-06-09 14:30 Asia/Kolkata` — explicit date (DST correctness depends on it; defaults to today).
 - `tzshift 1749571200` — epoch seconds, the log-file case.
 - `tzshift 14:30 Asia/Kolkata --to Europe/Berlin` — one-off target zone (IANA name or alias) not in the roster.

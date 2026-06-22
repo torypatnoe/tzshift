@@ -65,7 +65,8 @@ func TestParseArgs(t *testing.T) {
 			func(r *Request) bool { return r.DateGiven && r.Year == 2026 && r.Month == 6 && r.Day == 9 }, false},
 		{"order independent", []string{"UTC", "14:30"}, KindWall,
 			func(r *Request) bool { return r.ZoneToken == "UTC" && r.Hour == 14 }, false},
-		{"missing zone", []string{"14:30"}, KindWall, nil, true},
+		{"missing zone -> local", []string{"14:30"}, KindWall,
+			func(r *Request) bool { return r.Hour == 14 && r.ZoneToken == "" }, false},
 		{"missing time", []string{"Asia/Kolkata"}, KindWall, nil, true},
 		{"bad time", []string{"99:99", "UTC"}, KindWall, nil, true},
 		{"two times", []string{"14:30", "15:30", "UTC"}, KindWall, nil, true},
@@ -160,6 +161,23 @@ func TestSortedByOffset(t *testing.T) {
 	}
 }
 
+func TestInstantNoZoneIsLocal(t *testing.T) {
+	r, err := ParseArgs([]string{"14:30"})
+	if err != nil {
+		t.Fatalf("ParseArgs: %v", err)
+	}
+	res, err := r.Instant(map[string]string{}, map[string]string{}, time.Now())
+	if err != nil {
+		t.Fatalf("Instant: %v", err)
+	}
+	if res.SourceZone != "Local" {
+		t.Errorf("SourceZone = %q, want Local", res.SourceZone)
+	}
+	if !res.DateAssumed {
+		t.Errorf("expected date assumed for a date-less input")
+	}
+}
+
 func TestRowsOrderingEastFirst(t *testing.T) {
 	instant, _ := time.Parse(time.RFC3339, "2026-06-20T09:00:00Z")
 	entries := []Entry{
@@ -168,7 +186,10 @@ func TestRowsOrderingEastFirst(t *testing.T) {
 		{Label: "utc", Zone: "UTC"},
 		{Label: "ny", Zone: "America/New_York"},
 	}
-	rows := Rows(instant, entries)
+	rows := Rows(instant, entries, "Asia/Tokyo")
+	if !rows[0].IsSource || rows[1].IsSource {
+		t.Errorf("expected only the tokyo row to be marked source")
+	}
 	wantOrder := []string{"tokyo", "utc", "ny", "you"} // descending UTC offset
 	if len(rows) != len(wantOrder) {
 		t.Fatalf("got %d rows, want %d", len(rows), len(wantOrder))

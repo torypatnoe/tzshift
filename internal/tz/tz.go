@@ -122,9 +122,8 @@ func ParseArgs(args []string) (*Request, error) {
 	if !timeSet {
 		return nil, fmt.Errorf("missing time (expected HH:MM)")
 	}
-	if r.ZoneToken == "" {
-		return nil, fmt.Errorf("missing source zone (e.g. Asia/Kolkata or a roster alias)")
-	}
+	// A missing source zone is allowed: an empty ZoneToken means "interpret the
+	// time in the host's local zone" (resolved in Instant).
 	return r, nil
 }
 
@@ -143,9 +142,13 @@ func (r *Request) Instant(aliases, abbrev map[string]string, now time.Time) (Res
 	case KindEpoch:
 		return Resolved{Instant: time.Unix(r.Epoch, 0).UTC()}, nil
 	case KindWall:
-		loc, name, err := ResolveZone(r.ZoneToken, aliases, abbrev)
-		if err != nil {
-			return Resolved{}, err
+		loc, name := time.Local, "Local" // no source zone given -> local
+		if r.ZoneToken != "" {
+			var err error
+			loc, name, err = ResolveZone(r.ZoneToken, aliases, abbrev)
+			if err != nil {
+				return Resolved{}, err
+			}
 		}
 		y, mo, d := r.Year, time.Month(r.Month), r.Day
 		assumed := false
@@ -163,7 +166,7 @@ func (r *Request) Instant(aliases, abbrev map[string]string, now time.Time) (Res
 }
 
 // Row is one rendered output line: an instant expressed in one zone, with its
-// computed abbreviation, day-offset vs the local row, and a local marker.
+// computed abbreviation, day-offset vs the local row, and local/source markers.
 type Row struct {
 	Label         string
 	Zone          string
@@ -172,11 +175,14 @@ type Row struct {
 	OffsetSeconds int
 	DayOffset     int // calendar days vs the local (host) date
 	IsLocal       bool
+	IsSource      bool
 }
 
-// Rows expresses instant across entries, marks the local row, computes each
-// row's day-offset vs the host-local date, and sorts east-most first (AC15/AC16).
-func Rows(instant time.Time, entries []Entry) []Row {
+// Rows expresses instant across entries, marks the local and source rows,
+// computes each row's day-offset vs the host-local date, and sorts east-most
+// first (AC15/AC16). sourceZone is the IANA zone the user typed, or "" (epoch /
+// current-time modes have no source).
+func Rows(instant time.Time, entries []Entry, sourceZone string) []Row {
 	refDate := dateOnly(instant.In(time.Local))
 	_, localOff := instant.In(time.Local).Zone()
 
@@ -195,9 +201,18 @@ func Rows(instant time.Time, entries []Entry) []Row {
 			Abbr:          abbr,
 			OffsetSeconds: off,
 			DayOffset:     daysBetween(refDate, dateOnly(lt)),
+			IsSource:      sourceZone != "" && e.Zone == sourceZone,
 		})
 	}
 	markLocal(rows, localOff)
+	if sourceZone == "Local" {
+		// No source zone was given: the source is the local row(s).
+		for i := range rows {
+			if rows[i].IsLocal {
+				rows[i].IsSource = true
+			}
+		}
+	}
 
 	sort.SliceStable(rows, func(i, j int) bool {
 		if rows[i].OffsetSeconds != rows[j].OffsetSeconds {

@@ -16,23 +16,23 @@ func sampleRows() []tz.Row {
 		return time.Date(y, time.Month(mo), d, h, mi, 0, 0, time.UTC)
 	}
 	return []tz.Row{
-		{Label: "tokyo-team", Abbr: "JST", Time: at(2026, 6, 21, 3, 0), DayOffset: 1},
-		{Label: "india", Abbr: "IST", Time: at(2026, 6, 20, 23, 30)},
-		{Label: "legacy-billing", Abbr: "UTC", Time: at(2026, 6, 20, 18, 0)},
-		{Label: "ny-dc", Abbr: "EDT", Time: at(2026, 6, 20, 14, 0)},
-		{Label: "you", Abbr: "PDT", Time: at(2026, 6, 20, 11, 0), IsLocal: true},
+		{Label: "tokyo-team", OffsetSeconds: 9 * 3600, Time: at(2026, 6, 21, 3, 0), DayOffset: 1},
+		{Label: "india", OffsetSeconds: 5*3600 + 1800, Time: at(2026, 6, 20, 23, 30), IsSource: true},
+		{Label: "legacy-billing", OffsetSeconds: 0, Time: at(2026, 6, 20, 18, 0)},
+		{Label: "ny-dc", OffsetSeconds: -4 * 3600, Time: at(2026, 6, 20, 14, 0)},
+		{Label: "you", OffsetSeconds: -7 * 3600, Time: at(2026, 6, 20, 11, 0), IsLocal: true},
 	}
 }
 
 func TestShowGolden(t *testing.T) {
 	var buf bytes.Buffer
-	Show(&buf, "", sampleRows(), Options{Color: false})
+	Show(&buf, sampleRows(), Options{Color: false})
 	want := strings.Join([]string{
-		"→ 2026-06-21 03:00 JST tokyo-team  +1",
-		"→ 2026-06-20 23:30 IST india",
-		"→ 2026-06-20 18:00 UTC legacy-billing",
-		"→ 2026-06-20 14:00 EDT ny-dc",
-		"→ 2026-06-20 11:00 PDT you  ←you",
+		"→ tokyo-team      2026-06-21 03:00 +09:00  +1",
+		"→ india           2026-06-20 23:30 +05:30  ←source",
+		"→ legacy-billing  2026-06-20 18:00 +00:00",
+		"→ ny-dc           2026-06-20 14:00 -04:00",
+		"→ you             2026-06-20 11:00 -07:00  ←you",
 		"",
 	}, "\n")
 	if got := buf.String(); got != want {
@@ -42,7 +42,7 @@ func TestShowGolden(t *testing.T) {
 
 func TestShowColorOnlyOnCrossDate(t *testing.T) {
 	var buf bytes.Buffer
-	Show(&buf, "", sampleRows(), Options{Color: true})
+	Show(&buf, sampleRows(), Options{Color: true})
 	out := buf.String()
 	if !strings.Contains(out, ansiHighlight+"2026-06-21") {
 		t.Error("expected the cross-date row to be highlighted")
@@ -79,6 +79,17 @@ func TestFormatOffset(t *testing.T) {
 		if got := formatOffset(sec); got != want {
 			t.Errorf("formatOffset(%d) = %q, want %q", sec, got, want)
 		}
+	}
+}
+
+func TestShowSourceIsAlsoLocal(t *testing.T) {
+	// When the row is both source and local, both markers appear.
+	at := time.Date(2026, 6, 20, 11, 0, 0, 0, time.UTC)
+	rows := []tz.Row{{Label: "you", OffsetSeconds: -7 * 3600, Time: at, IsLocal: true, IsSource: true}}
+	var buf bytes.Buffer
+	Show(&buf, rows, Options{Color: false})
+	if got := buf.String(); !strings.Contains(got, "←you  ←source") {
+		t.Errorf("expected both markers on one row, got: %s", got)
 	}
 }
 

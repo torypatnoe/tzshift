@@ -25,33 +25,35 @@ type Options struct {
 	Color bool
 }
 
-// Show writes the optional header followed by one aligned row per result.
-func Show(w io.Writer, header string, rows []tz.Row, opts Options) {
-	if header != "" {
-		fmt.Fprintln(w, header)
-	}
-	abbrW := 0
+// Show writes one aligned row per result. Rows read label first, then date and
+// time, then UTC offset; the zone abbreviation is not shown. There is no header
+// line — the source zone is identified inline by a ←source marker.
+func Show(w io.Writer, rows []tz.Row, opts Options) {
+	labelW := 0
 	for _, r := range rows {
-		if len(r.Abbr) > abbrW {
-			abbrW = len(r.Abbr)
+		if len(r.Label) > labelW {
+			labelW = len(r.Label)
 		}
 	}
 	for _, r := range rows {
-		fmt.Fprintln(w, formatRow(r, abbrW, opts.Color))
+		fmt.Fprintln(w, formatRow(r, labelW, opts.Color))
 	}
 }
 
-func formatRow(r tz.Row, abbrW int, color bool) string {
+func formatRow(r tz.Row, labelW int, color bool) string {
 	date := r.Time.Format(dateFmt)
 	if color && r.DayOffset != 0 {
 		date = ansiHighlight + date + ansiReset
 	}
-	line := fmt.Sprintf("→ %s %s %-*s %s", date, r.Time.Format(timeFmt), abbrW, r.Abbr, r.Label)
+	line := fmt.Sprintf("→ %-*s  %s %s %s", labelW, r.Label, date, r.Time.Format(timeFmt), formatOffset(r.OffsetSeconds))
 	if m := dayMarker(r.DayOffset); m != "" {
 		line += "  " + m
 	}
 	if r.IsLocal {
 		line += "  ←you"
+	}
+	if r.IsSource {
+		line += "  ←source"
 	}
 	return line
 }
@@ -126,22 +128,5 @@ func List(w io.Writer, zoneNames []string, abbrev map[string]string, now time.Ti
 	}
 	for _, k := range keys {
 		fmt.Fprintf(w, "  %-*s  %s\n", abW, k, abbrev[k])
-	}
-}
-
-// Header builds the echo line for a show invocation.
-func Header(r *tz.Request, res tz.Resolved) string {
-	switch r.Kind {
-	case tz.KindEpoch:
-		return fmt.Sprintf("%d → %s UTC", r.Epoch, res.Instant.UTC().Format("2006-01-02 15:04:05"))
-	case tz.KindWall:
-		t := fmt.Sprintf("%02d:%02d", r.Hour, r.Minute)
-		if res.DateAssumed {
-			return fmt.Sprintf("%s → source %s, date assumed today (%s)",
-				t, res.SourceZone, res.Instant.Format(dateFmt))
-		}
-		return fmt.Sprintf("%s %s → source %s", t, res.Instant.Format(dateFmt), res.SourceZone)
-	default:
-		return strings.TrimSpace("current time")
 	}
 }

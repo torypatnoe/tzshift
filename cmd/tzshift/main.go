@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/term"
@@ -70,18 +71,53 @@ func runShow(args []string, to string, color bool) int {
 	}
 
 	if to != "" {
-		loc, name, err := tz.ResolveZone(to, aliases, abbrev)
+		_, name, err := tz.ResolveZone(to, aliases, abbrev)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "tzshift: --to:", err)
 			return 1
 		}
-		_ = loc
 		entries = append(entries, tz.Entry{Label: to, Zone: name})
 	}
 
-	rows := tz.Rows(res.Instant, entries)
-	render.Show(os.Stdout, render.Header(req, res), rows, render.Options{Color: color})
+	// Always show the zone the user typed and their own local time (the date
+	// anchor for +N/-N), adding either only if the roster doesn't cover it. When
+	// no source zone was given (SourceZone == "Local"), the local row below is
+	// the source, so it isn't added separately.
+	if res.SourceZone != "" && res.SourceZone != "Local" {
+		entries = ensureZone(entries, tz.Entry{Label: res.SourceZone, Zone: res.SourceZone})
+	}
+	entries = ensureLocal(entries, res.Instant)
+
+	rows := tz.Rows(res.Instant, entries, res.SourceZone)
+	render.Show(os.Stdout, rows, render.Options{Color: color})
 	return 0
+}
+
+// ensureZone appends e unless an entry already maps to the same IANA zone.
+func ensureZone(entries []tz.Entry, e tz.Entry) []tz.Entry {
+	for _, x := range entries {
+		if x.Zone == e.Zone {
+			return entries
+		}
+	}
+	return append(entries, e)
+}
+
+// ensureLocal appends a `you` row for the host's local zone unless the roster
+// already shows it — detected by a you/local label or a row at the same offset.
+func ensureLocal(entries []tz.Entry, instant time.Time) []tz.Entry {
+	_, localOff := instant.In(time.Local).Zone()
+	for _, x := range entries {
+		if strings.EqualFold(x.Label, "you") || strings.EqualFold(x.Label, "local") {
+			return entries
+		}
+		if loc, err := time.LoadLocation(x.Zone); err == nil {
+			if _, off := instant.In(loc).Zone(); off == localOff {
+				return entries
+			}
+		}
+	}
+	return append(entries, tz.Entry{Label: "you", Zone: "Local"})
 }
 
 func runList() int {
@@ -163,6 +199,7 @@ Usage:
 
 Examples:
   tzshift 14:30 Asia/Kolkata        wall-clock time in a zone (date = today)
+  tzshift 14:30                      ...with no zone, time is in YOUR local zone
   tzshift 14:30 india               using a [zones] alias
   tzshift 2026-06-09 14:30 UTC      explicit date
   tzshift 1749571200                epoch seconds

@@ -10,16 +10,18 @@ SREs on distributed teams constantly receive timestamps posted in *someone else'
 
 ```
 $ tzshift 23:30 Asia/Kolkata
-23:30 → source Asia/Kolkata, date assumed today (2026-06-20)
-→ 2026-06-21 03:00 JST tokyo-team  +1
-→ 2026-06-20 23:30 IST india
-→ 2026-06-20 18:00 UTC legacy-billing
-→ 2026-06-20 14:00 EDT ny-dc
-→ 2026-06-20 11:00 PDT you  ←you
+→ tokyo-team      2026-06-21 03:00 +09:00  +1
+→ india           2026-06-20 23:30 +05:30  ←source
+→ legacy-billing  2026-06-20 18:00 +00:00
+→ ny-dc           2026-06-20 14:00 -04:00
+→ you             2026-06-20 11:00 -07:00  ←you
 ```
 
 Rows are sorted east-most first, every row carries its date, and a row on a
-different day than you is marked (`+1`) and highlighted on a TTY.
+different day than you is marked (`+1`) and highlighted on a TTY. Your own local
+time (`←you`) and the source zone you typed (`←source`) are always shown — added
+automatically if your roster doesn't already list them — so the `+1`/`-1`
+markers always have a visible anchor.
 
 ## Install & use
 
@@ -29,11 +31,11 @@ go install github.com/torypatnoe/tztools/cmd/tzshift@latest   # or: make build
 
 ```
 tzshift 14:30 Asia/Kolkata          # wall-clock time in a zone (date = today)
+tzshift 14:30                       # no zone -> interpreted in your local zone
 tzshift 14:30 india                 # using a [zones] alias
 tzshift 2026-06-09 14:30 UTC        # explicit date
 tzshift 1749571200                  # epoch seconds
 tzshift                             # current time across your roster
-tzshift 14:30 UTC --to Europe/Berlin   # add a one-off zone
 tzshift list                        # known zones (east-most first) + your abbreviations
 ```
 
