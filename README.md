@@ -35,7 +35,6 @@ tzshift 1749571200                  # epoch seconds
 tzshift                             # current time across your roster
 tzshift 14:30 UTC --to Europe/Berlin   # add a one-off zone
 tzshift list                        # known zones (east-most first) + your abbreviations
-tzshift list --sort=name            # ...sorted alphabetically instead
 ```
 
 The source zone is an **IANA name** (`Asia/Kolkata`) or a **roster alias** —
