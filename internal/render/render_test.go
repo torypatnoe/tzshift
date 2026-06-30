@@ -28,11 +28,11 @@ func TestShowGolden(t *testing.T) {
 	var buf bytes.Buffer
 	Show(&buf, sampleRows(), Options{Color: false})
 	want := strings.Join([]string{
-		"→ tokyo-team      2026-06-21 03:00 +09:00  +1",
-		"→ india           2026-06-20 23:30 +05:30  ←source",
-		"→ legacy-billing  2026-06-20 18:00 +00:00",
-		"→ ny-dc           2026-06-20 14:00 -04:00",
-		"→ you             2026-06-20 11:00 -07:00  ←you",
+		"tokyo-team      2026-06-21 03:00 +09:00  +1",
+		"india           2026-06-20 23:30 +05:30  ←source",
+		"legacy-billing  2026-06-20 18:00 +00:00",
+		"ny-dc           2026-06-20 14:00 -04:00",
+		"you             2026-06-20 11:00 -07:00  ←you",
 		"",
 	}, "\n")
 	if got := buf.String(); got != want {
@@ -43,13 +43,17 @@ func TestShowGolden(t *testing.T) {
 func TestShowColorOnlyOnCrossDate(t *testing.T) {
 	var buf bytes.Buffer
 	Show(&buf, sampleRows(), Options{Color: true})
-	out := buf.String()
-	if !strings.Contains(out, ansiHighlight+"2026-06-21") {
-		t.Error("expected the cross-date row to be highlighted")
-	}
-	// The same-date rows must not be wrapped in color.
-	if strings.Contains(out, ansiHighlight+"2026-06-20") {
-		t.Error("same-date rows should not be highlighted")
+	for _, line := range strings.Split(strings.TrimRight(buf.String(), "\n"), "\n") {
+		crossDate := strings.HasPrefix(line, ansiHighlight+"tokyo-team")
+		wrapped := strings.HasPrefix(line, ansiHighlight) && strings.HasSuffix(line, ansiReset)
+		if strings.Contains(line, "tokyo-team") {
+			if !wrapped {
+				t.Errorf("cross-date row should be fully highlighted: %q", line)
+			}
+			_ = crossDate
+		} else if strings.Contains(line, ansiHighlight) {
+			t.Errorf("same-date row should not be highlighted: %q", line)
+		}
 	}
 }
 

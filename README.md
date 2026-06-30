@@ -10,18 +10,18 @@ SREs on distributed teams constantly receive timestamps posted in *someone else'
 
 ```
 $ tzshift 23:30 Asia/Kolkata
-→ tokyo-team      2026-06-21 03:00 +09:00  +1
-→ india           2026-06-20 23:30 +05:30  ←source
-→ legacy-billing  2026-06-20 18:00 +00:00
-→ ny-dc           2026-06-20 14:00 -04:00
-→ you             2026-06-20 11:00 -07:00  ←you
+tokyo-team      2026-06-21 03:00 +09:00  +1
+india           2026-06-20 23:30 +05:30  ←source
+legacy-billing  2026-06-20 18:00 +00:00
+ny-dc           2026-06-20 14:00 -04:00
+you             2026-06-20 11:00 -07:00  ←you
 ```
 
 Rows are sorted east-most first, every row carries its date, and a row on a
-different day than you is marked (`+1`) and highlighted on a TTY. Your own local
-time (`←you`) and the source zone you typed (`←source`) are always shown — added
-automatically if your roster doesn't already list them — so the `+1`/`-1`
-markers always have a visible anchor.
+different day than the source is marked (`+1`/`-1`) and the whole line is
+highlighted on a TTY. The source zone you typed (`←source`) and your own local
+time (`←you`) are always shown — added automatically if your roster doesn't
+already list them — so the markers always have a visible anchor.
 
 ## Install & use
 
@@ -37,6 +37,8 @@ tzshift 2026-06-09 14:30 UTC        # explicit date
 tzshift 1749571200                  # epoch seconds
 tzshift                             # current time across your roster
 tzshift list                        # known zones (east-most first) + your abbreviations
+tzshift config create               # scaffold ~/.config/tzshift/config.toml
+tzshift config list                 # print your current config
 ```
 
 The source zone is an **IANA name** (`Asia/Kolkata`) or a **roster alias** —
@@ -58,7 +60,7 @@ you            = "America/Los_Angeles"
 IST = "Asia/Kolkata"
 ```
 
-With no config file, tzshift falls back to local + UTC + America/Denver and shows you how to create one.
+With no config file, tzshift falls back to local + UTC + America/Denver. Run `tzshift config create` to scaffold one.
 
 ## Status
 

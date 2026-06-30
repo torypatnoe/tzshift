@@ -102,3 +102,35 @@ func Fallback() []tz.Entry {
 		{Label: "America/Denver", Zone: "America/Denver"},
 	}
 }
+
+// Template is the starter config written by `tzshift config create`.
+const Template = `# tzshift configuration — ~/.config/tzshift/config.toml
+# Roster: each entry is  label = "IANA/Zone"  and prints one output row.
+[zones]
+you   = "America/Los_Angeles"
+ny-dc = "America/New_York"
+utc   = "UTC"
+
+# Optional: your own source-zone shortcuts (label = "IANA/Zone").
+# Lets e.g. ` + "`tzshift 14:30 IST`" + ` work because YOU defined what IST means.
+[abbreviations]
+# IST = "Asia/Kolkata"
+`
+
+// Create writes the starter Template to Path(), creating parent directories.
+// It refuses to overwrite an existing file. Returns the path written.
+func Create() (string, error) {
+	path := Path()
+	if _, err := os.Stat(path); err == nil {
+		return "", fmt.Errorf("config already exists at %s (not overwriting)", path)
+	} else if !os.IsNotExist(err) {
+		return "", err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(path, []byte(Template), 0o644); err != nil {
+		return "", err
+	}
+	return path, nil
+}

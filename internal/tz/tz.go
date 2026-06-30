@@ -179,11 +179,18 @@ type Row struct {
 }
 
 // Rows expresses instant across entries, marks the local and source rows,
-// computes each row's day-offset vs the host-local date, and sorts east-most
-// first (AC15/AC16). sourceZone is the IANA zone the user typed, or "" (epoch /
-// current-time modes have no source).
+// computes each row's day-offset vs the source zone's date, and sorts east-most
+// first (AC15/AC16). sourceZone is the IANA zone the user typed, "Local" (no
+// zone given), or "" (epoch / current-time modes); for the latter two the
+// day-offset anchor falls back to the host's local date.
 func Rows(instant time.Time, entries []Entry, sourceZone string) []Row {
-	refDate := dateOnly(instant.In(time.Local))
+	anchorLoc := time.Local
+	if sourceZone != "" && sourceZone != "Local" {
+		if loc, err := time.LoadLocation(sourceZone); err == nil {
+			anchorLoc = loc
+		}
+	}
+	refDate := dateOnly(instant.In(anchorLoc))
 	_, localOff := instant.In(time.Local).Zone()
 
 	rows := make([]Row, 0, len(entries))

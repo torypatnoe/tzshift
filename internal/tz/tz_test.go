@@ -178,6 +178,27 @@ func TestInstantNoZoneIsLocal(t *testing.T) {
 	}
 }
 
+func TestRowsAnchorToSource(t *testing.T) {
+	instant, _ := time.Parse(time.RFC3339, "2026-06-22T04:30:00Z") // 10:00 in Kolkata
+	entries := []Entry{
+		{Label: "india", Zone: "Asia/Kolkata"},
+		{Label: "denver", Zone: "America/Denver"},
+	}
+	rows := Rows(instant, entries, "Asia/Kolkata")
+	for _, r := range rows {
+		switch r.Zone {
+		case "Asia/Kolkata":
+			if r.DayOffset != 0 || !r.IsSource {
+				t.Errorf("source row: DayOffset=%d IsSource=%v, want 0/true", r.DayOffset, r.IsSource)
+			}
+		case "America/Denver":
+			if r.DayOffset != -1 { // 22:30 on the prior day vs the source date
+				t.Errorf("denver DayOffset = %d, want -1", r.DayOffset)
+			}
+		}
+	}
+}
+
 func TestRowsOrderingEastFirst(t *testing.T) {
 	instant, _ := time.Parse(time.RFC3339, "2026-06-20T09:00:00Z")
 	entries := []Entry{

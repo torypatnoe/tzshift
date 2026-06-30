@@ -41,11 +41,7 @@ func Show(w io.Writer, rows []tz.Row, opts Options) {
 }
 
 func formatRow(r tz.Row, labelW int, color bool) string {
-	date := r.Time.Format(dateFmt)
-	if color && r.DayOffset != 0 {
-		date = ansiHighlight + date + ansiReset
-	}
-	line := fmt.Sprintf("→ %-*s  %s %s %s", labelW, r.Label, date, r.Time.Format(timeFmt), formatOffset(r.OffsetSeconds))
+	line := fmt.Sprintf("%-*s  %s %s %s", labelW, r.Label, r.Time.Format(dateFmt), r.Time.Format(timeFmt), formatOffset(r.OffsetSeconds))
 	if m := dayMarker(r.DayOffset); m != "" {
 		line += "  " + m
 	}
@@ -54,6 +50,9 @@ func formatRow(r tz.Row, labelW int, color bool) string {
 	}
 	if r.IsSource {
 		line += "  ←source"
+	}
+	if color && r.DayOffset != 0 { // whole line highlighted on a cross-date row
+		line = ansiHighlight + line + ansiReset
 	}
 	return line
 }

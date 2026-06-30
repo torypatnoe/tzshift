@@ -67,6 +67,33 @@ oops = "Not/AZone"
 	}
 }
 
+func TestCreate(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+
+	path, err := Create()
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if path != Path() {
+		t.Errorf("Create path = %q, want %q", path, Path())
+	}
+
+	// The template must parse and round-trip through Load.
+	cfg, found, err := LoadFile(path)
+	if err != nil || !found {
+		t.Fatalf("generated template failed to load: found=%v err=%v", found, err)
+	}
+	if len(cfg.Zones) == 0 {
+		t.Error("template should define some [zones]")
+	}
+
+	// Second create must refuse to overwrite.
+	if _, err := Create(); err == nil {
+		t.Error("Create should refuse to overwrite an existing config")
+	}
+}
+
 func TestFallback(t *testing.T) {
 	fb := Fallback()
 	if len(fb) != 3 {

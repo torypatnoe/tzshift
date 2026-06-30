@@ -3,6 +3,7 @@
 > Forma living Shape — describes the full product as currently understood, deliberately larger than any single cycle's work. What a specific cycle commits to is recorded in that cycle's record (`cycles/cycle-N.md`). Per-cycle facts (appetite, scope boundary, DRI confirmation) live only in the Bet.
 
 ## Changelog
+- 2026-06-22: Added **`tzshift config create`** (scaffold a starter config) and **`tzshift config list`** (print it). Dropped the leading `→` from `show` rows; cross-date rows now highlight the **whole line**; and the cross-date anchor is now the **source** zone (`←source`) rather than the local row.
 - 2026-06-22: **Source zone is now optional.** `tzshift 14:30` (no zone) interprets the time in your local zone instead of erroring; the local `←you` row is then also the `←source`.
 - 2026-06-22: **`show` drops the echo/header line.** The source zone is identified inline by a **`←source`** marker (a row that is both source and local shows `←you  ←source`); the assumed date is conveyed by the per-row dates rather than a header note.
 - 2026-06-22: **`show` auto-includes your local time and the source zone.** The `+1`/`-1` day markers are anchored to your host's local date; that local row (`←you`) is now always shown — added automatically if your roster doesn't list your zone — so the markers always have a visible reference. The source zone you typed is likewise always shown. (Fixes the confusing case where every row showed `+1` against an off-screen anchor.)
@@ -19,7 +20,7 @@
 
 ## Rough solution narrative
 
-**tzshift is subcommand-oriented.** Two commands matter at phase 1: `tzshift show` (the workhorse) and `tzshift list` (reference). `show` is the default — if no subcommand matches the first argument, the input is handed to `show` along with any parameters.
+**tzshift is subcommand-oriented.** The commands at phase 1: `tzshift show` (the workhorse), `tzshift list` (reference), and `tzshift config create|list` (scaffold / print the config file). `show` is the default — if no subcommand matches the first argument, the input is handed to `show` along with any parameters.
 
 ### tzshift show — the workhorse
 
@@ -27,11 +28,11 @@ An SRE is reading an incident channel. A teammate in Bangalore writes "rollback 
 
 ```
 $ tzshift 14:30 Asia/Kolkata
-→ tokyo-team      2026-06-19 18:00 +09:00
-→ india           2026-06-19 14:30 +05:30  ←source
-→ legacy-billing  2026-06-19 09:00 +00:00
-→ ny-dc           2026-06-19 05:00 -04:00
-→ you             2026-06-19 02:00 -07:00  ←you
+tokyo-team      2026-06-19 18:00 +09:00
+india           2026-06-19 14:30 +05:30  ←source
+legacy-billing  2026-06-19 09:00 +00:00
+ny-dc           2026-06-19 05:00 -04:00
+you             2026-06-19 02:00 -07:00  ←you
 ```
 
 One command, instant answer, no mental math. The source zone is given as an **IANA name** (`Asia/Kolkata`) or a **roster alias** (`india`) — tzshift ships no three-letter input mapping, because an abbreviation like `IST` (India? Israel? Ireland?) is exactly the silent guess the tool refuses to make. The output rows come from a roster the SRE set up once:
@@ -57,18 +58,18 @@ The `[zones]` roster names the zones the SRE actually cares about — people, da
 
 - Rows are sorted **east-most first** (largest UTC offset at the top), so the output reads like a timeline regardless of roster order.
 - Every row carries its **date**, so a conversion that crosses midnight is unmistakable.
-- When a row's date differs from the local (`you`) row it is **highlighted** — color when stdout is a TTY, and a `+1`/`-1` day marker that survives a pipe:
+- When a row's date differs from the **source** (`←source`) row it is **highlighted** — the whole line is colored when stdout is a TTY, and a `+1`/`-1` day marker survives a pipe:
 
 ```
 $ tzshift 23:30 Asia/Kolkata
-→ tokyo-team      2026-06-20 03:00 +09:00  +1
-→ india           2026-06-19 23:30 +05:30  ←source
-→ legacy-billing  2026-06-19 18:00 +00:00
-→ ny-dc           2026-06-19 14:00 -04:00
-→ you             2026-06-19 11:00 -07:00  ←you
+tokyo-team      2026-06-20 03:00 +09:00  +1
+india           2026-06-19 23:30 +05:30  ←source
+legacy-billing  2026-06-19 18:00 +00:00
+ny-dc           2026-06-19 14:00 -04:00
+you             2026-06-19 11:00 -07:00  ←you
 ```
 
-- The local **`you` row is marked** (`←you`) so it stays findable even though it is no longer pinned to the top. It is the **anchor for the `+1`/`-1` markers** — and `show` always includes it (and the source zone you typed, marked **`←source`**), adding either automatically when your roster doesn't already list it. That way the day markers always reference a row you can actually see. There is **no echo/header line**; the source row's `←source` marker replaces it (a row that is both shows `←you  ←source`).
+- The **`←source` row is the anchor for the `+1`/`-1` markers** (the zone you typed; for epoch / current-time inputs there is no source, so the anchor falls back to your local date). `show` always includes the source row and your local **`←you`** row, adding either automatically when your roster doesn't already list it — so the day markers always reference a row you can actually see. There is **no echo/header line**; the `←source` marker replaces it (a row that is both source and local shows `←you  ←source`).
 
 Variations the narrative must cover:
 
@@ -78,7 +79,7 @@ Variations the narrative must cover:
 - `tzshift 2026-06-09 14:30 Asia/Kolkata` — explicit date (DST correctness depends on it; defaults to today).
 - `tzshift 1749571200` — epoch seconds, the log-file case.
 - `tzshift 14:30 Asia/Kolkata --to Europe/Berlin` — one-off target zone (IANA name or alias) not in the roster.
-- No config file yet → helpful message showing how to create one; falls back to **local time + UTC + America/Denver**.
+- No config file yet → falls back silently to **local time + UTC + America/Denver**; `tzshift config create` scaffolds a starter file and `tzshift config list` prints the current one.
 
 ### tzshift list — reference
 

@@ -31,14 +31,12 @@ func run(argv []string) int {
 		return 0
 	}
 
-	// Subcommand dispatch: `list`, explicit `show`, else default to `show`.
+	// Subcommand dispatch: `list`, `config`, explicit `show`, else default `show`.
 	cmd := "show"
 	if len(args) > 0 {
 		switch args[0] {
-		case "list":
-			cmd, args = "list", args[1:]
-		case "show":
-			cmd, args = "show", args[1:]
+		case "list", "config", "show":
+			cmd, args = args[0], args[1:]
 		}
 	}
 
@@ -47,8 +45,40 @@ func run(argv []string) int {
 	switch cmd {
 	case "list":
 		return runList()
+	case "config":
+		return runConfig(args)
 	default:
 		return runShow(args, flags.to, color)
+	}
+}
+
+// runConfig handles `tzshift config create` and `tzshift config list`.
+func runConfig(args []string) int {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "tzshift config: expected a subcommand (create or list)")
+		return 2
+	}
+	switch args[0] {
+	case "create":
+		path, err := config.Create()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "tzshift config create:", err)
+			return 1
+		}
+		fmt.Println("created", path)
+		return 0
+	case "list":
+		path := config.Path()
+		data, err := os.ReadFile(path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "tzshift config list: no config at %s (run 'tzshift config create')\n", path)
+			return 1
+		}
+		os.Stdout.Write(data)
+		return 0
+	default:
+		fmt.Fprintf(os.Stderr, "tzshift config: unknown subcommand %q (expected create or list)\n", args[0])
+		return 2
 	}
 }
 
@@ -196,6 +226,7 @@ const usage = `tzshift — translate a timestamp into your roster's zones
 Usage:
   tzshift [TIME [DATE] ZONE] [--to ZONE] [--no-color]
   tzshift list
+  tzshift config create | list
 
 Examples:
   tzshift 14:30 Asia/Kolkata        wall-clock time in a zone (date = today)
@@ -206,6 +237,8 @@ Examples:
   tzshift                           current time across your roster
   tzshift 14:30 UTC --to Europe/Berlin   add a one-off zone
   tzshift list                      known zones (east-most first) + your abbreviations
+  tzshift config create             write a starter ~/.config/tzshift/config.toml
+  tzshift config list               print your current config file
 
 Config:
   ~/.config/tzshift/config.toml defines your roster and optional shortcuts:
