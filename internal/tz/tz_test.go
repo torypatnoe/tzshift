@@ -178,6 +178,20 @@ func TestInstantNoZoneIsLocal(t *testing.T) {
 	}
 }
 
+func TestInstantNowIsLocalSource(t *testing.T) {
+	r, _ := ParseArgs(nil) // bare `tzshift` -> current time
+	if r.Kind != KindNow {
+		t.Fatalf("Kind = %v, want KindNow", r.Kind)
+	}
+	res, err := r.Instant(map[string]string{}, map[string]string{}, time.Now())
+	if err != nil {
+		t.Fatalf("Instant: %v", err)
+	}
+	if res.SourceZone != "Local" {
+		t.Errorf("SourceZone = %q, want Local (current-time source is local)", res.SourceZone)
+	}
+}
+
 func TestRowsAnchorToSource(t *testing.T) {
 	instant, _ := time.Parse(time.RFC3339, "2026-06-22T04:30:00Z") // 10:00 in Kolkata
 	entries := []Entry{

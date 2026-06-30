@@ -138,7 +138,8 @@ type Resolved struct {
 func (r *Request) Instant(aliases, abbrev map[string]string, now time.Time) (Resolved, error) {
 	switch r.Kind {
 	case KindNow:
-		return Resolved{Instant: now}, nil
+		// Current-time mode has no typed source; the source is the local zone.
+		return Resolved{Instant: now, SourceZone: "Local"}, nil
 	case KindEpoch:
 		return Resolved{Instant: time.Unix(r.Epoch, 0).UTC()}, nil
 	case KindWall:
@@ -181,8 +182,8 @@ type Row struct {
 // Rows expresses instant across entries, marks the local and source rows,
 // computes each row's day-offset vs the source zone's date, and sorts east-most
 // first (AC15/AC16). sourceZone is the IANA zone the user typed, "Local" (no
-// zone given), or "" (epoch / current-time modes); for the latter two the
-// day-offset anchor falls back to the host's local date.
+// zone given, or current-time mode), or "" (epoch mode); when it is "Local" or
+// "", the day-offset anchor is the host's local date.
 func Rows(instant time.Time, entries []Entry, sourceZone string) []Row {
 	anchorLoc := time.Local
 	if sourceZone != "" && sourceZone != "Local" {
