@@ -52,4 +52,4 @@ Competitive landscape recorded in [research/competitive-cli-timezone-tools.md](.
 
 If translation of any timestamp into team-relevant times is a single instant action inside the SRE's existing workflow, timezone-related coordination mental math is removed and SRE team members can focus on solving the problem.
 
-**Observable signal (how we'd know it's true or false):** the SRE reaches for `tz` instead of a browser, world-clock app, or mental math when a posted timestamp needs translating — and at least one DST-boundary conversion that would previously have been error-prone is handled correctly. If the old tools still win, the hypothesis is wrong. This is the signal the Cycle 1 [Spec](spec.md) measures.
+**Observable signal (how we'd know it's true or false):** the SRE reaches for `tzshift` instead of a browser, world-clock app, or mental math when a posted timestamp needs translating — and at least one DST-boundary conversion that would previously have been error-prone is handled correctly. If the old tools still win, the hypothesis is wrong. This is the signal the Cycle 1 [Spec](spec.md) measures.
