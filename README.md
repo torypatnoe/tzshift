@@ -92,3 +92,9 @@ parent/
 ```
 
 [project/forma-retro.md](project/forma-retro.md) records lessons from dogfooding Forma on this project, destined for the methodology repo.
+
+## License
+
+Copyright 2026 Tory Patnoe.
+
+Licensed under the [Apache License, Version 2.0](LICENSE). This covers everything in the repository, including the project documents under [project/](project/) and [research/](research/).
